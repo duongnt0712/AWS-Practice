@@ -338,6 +338,49 @@ Resources:
       RouteTableId: !Ref PrivateRouteTable3
       SubnetId: !Ref PrivateSubnet3
 
+  # Security Group for the ALB
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Allow HTTP and HTTPS traffic to the ALB
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: ALBSecurityGroup
+
+  # Create the Application Load Balancer (ALB)
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties: 
+      Name: ApplicationLoadBalancer
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+        - !Ref PublicSubnet3
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+      Scheme: internet-facing
+      IpAddressType: ipv4
+
+  # ALB Listener for HTTP
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: fixed-response
+          FixedResponseConfig:
+            StatusCode: 200
+            ContentType: text/plain
+            MessageBody: "Hello from ALB!"
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
 Outputs:
   VPCId:
     Description: "VPC ID"
@@ -369,5 +412,11 @@ Outputs:
   PrivateSubnet3Id:
     Description: "PrivateSubnet3 ID"
     Value: !Ref PrivateSubnet3
+  LoadBalancerDNSName:
+    Description: "Application Load Balancer DNS Name"
+    Value: !GetAtt ApplicationLoadBalancer.DNSName
+  LoadBalancerArn:
+    Description: "Application Load Balancer ARN"
+    Value: !GetAtt ApplicationLoadBalancer.LoadBalancerArn
     
   
