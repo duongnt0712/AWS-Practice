@@ -1,10 +1,17 @@
 Description: Exercise 1 - CloudFormation template. It deploys a VPC, with a set of public and private subnets spread across 3 AZs
 
 Parameters:
+  ProjectName:
+    Description: A project name that is prefixed to resource names
+    Type: String
+
   EnvironmentName:
     Description: An environment name that is prefixed to resource names
     Type: String
-    Default: ap-southeast-1
+    Default: Development
+    AllowedValues:
+      - Production
+      - Development
     
   VpcCIDR:
     Description: Please enter the IP range (CIDR notation) for this VPC
@@ -66,14 +73,22 @@ Resources:
       EnableDnsHostnames: true
       Tags:
         - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-VPC
+        - Key: Environment
           Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
         - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-InternetGateway
+        - Key: Environment
           Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   InternetGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -91,7 +106,11 @@ Resources:
       MapPublicIpOnLaunch: true # instances launched into the subnet automatically receive a public IP address upon launch
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Public Subnet (AZ1)
+          Value: !Sub ${ProjectName}-${EnvironmentName}-Public Subnet (AZ1)
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   PublicSubnet2:
     Type: AWS::EC2::Subnet
@@ -102,7 +121,11 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Public Subnet (AZ2)
+          Value: !Sub ${ProjectName}-${EnvironmentName}-Public Subnet (AZ2)
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   PublicSubnet3:
     Type: AWS::EC2::Subnet
@@ -113,7 +136,11 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Public Subnet (AZ3)
+          Value: !Sub ${ProjectName}-${EnvironmentName}-Public Subnet (AZ3)
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   PublicSubnet4:
     Type: AWS::EC2::Subnet
@@ -124,7 +151,11 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Public Subnet (AZ4)
+          Value: !Sub ${ProjectName}-${EnvironmentName}-Public Subnet (AZ4)
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   PublicSubnet5:
     Type: AWS::EC2::Subnet
@@ -135,7 +166,11 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Public Subnet (AZ5)
+          Value: !Sub ${ProjectName}-${EnvironmentName}-Public Subnet (AZ5)
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   PublicSubnet6:
     Type: AWS::EC2::Subnet
@@ -146,7 +181,11 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Public Subnet (AZ6)
+          Value: !Sub ${ProjectName}-${EnvironmentName}-Public Subnet (AZ6)
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   # Private Subnets
   PrivateSubnet1:
@@ -158,7 +197,11 @@ Resources:
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Private Subnet (AZ1)
+          Value: !Sub ${ProjectName}-${EnvironmentName}-Private Subnet (AZ1)
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   PrivateSubnet2:
     Type: AWS::EC2::Subnet
@@ -169,7 +212,11 @@ Resources:
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Private Subnet (AZ2)
+          Value: !Sub ${ProjectName}-${EnvironmentName}-Private Subnet (AZ2)
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   PrivateSubnet3:
     Type: AWS::EC2::Subnet
@@ -180,7 +227,11 @@ Resources:
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Private Subnet (AZ3)
+          Value: !Sub ${ProjectName}-${EnvironmentName}-Private Subnet (AZ3)
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   # Route Table for Public Subnets
   PublicRouteTable:
@@ -189,7 +240,11 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Public Routes
+          Value: !Sub ${ProjectName}-${EnvironmentName}-Public Routes
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   # Public Route to Internet
   DefaultPublicRoute:
@@ -242,36 +297,78 @@ Resources:
     DependsOn: InternetGatewayAttachment
     Properties:
       Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-NatGateway1EIP
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   NatGateway2EIP:
     Type: AWS::EC2::EIP
     DependsOn: InternetGatewayAttachment
     Properties:
       Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-NatGateway2EIP
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   NatGateway3EIP:
     Type: AWS::EC2::EIP
     DependsOn: InternetGatewayAttachment
     Properties:
       Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-NatGateway3EIP
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   NatGateway1:
     Type: AWS::EC2::NatGateway
     Properties:
       AllocationId: !GetAtt NatGateway1EIP.AllocationId
       SubnetId: !Ref PublicSubnet4
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-NatGateway1
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   NatGateway2:
     Type: AWS::EC2::NatGateway
     Properties:
       AllocationId: !GetAtt NatGateway2EIP.AllocationId
       SubnetId: !Ref PublicSubnet5
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-NatGateway2
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   NatGateway3:
     Type: AWS::EC2::NatGateway
     Properties:
       AllocationId: !GetAtt NatGateway3EIP.AllocationId
       SubnetId: !Ref PublicSubnet6
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-NatGateway3
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   # Private Route Table
   PrivateRouteTable1:
@@ -280,7 +377,11 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Private Routes (AZ1)
+          Value: !Sub ${ProjectName}-${EnvironmentName}-Private Routes (AZ1)
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   # Private Route for Outbound Internet through NAT Gateway
   DefaultPrivateRoute1:
@@ -302,7 +403,11 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Private Routes (AZ2)
+          Value: !Sub ${ProjectName}-${EnvironmentName}-Private Routes (AZ2)
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   DefaultPrivateRoute2:
     Type: AWS::EC2::Route
@@ -323,7 +428,11 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName} Private Routes (AZ3)
+          Value: !Sub ${ProjectName}-${EnvironmentName}-Private Routes (AZ3)
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   DefaultPrivateRoute3:
     Type: AWS::EC2::Route
@@ -351,13 +460,16 @@ Resources:
           CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
-          Value: ALBSecurityGroup
+          Value: !Sub ${ProjectName}-${EnvironmentName}-ALBSecurityGroup
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
-  # Create the Application Load Balancer (ALB)
+  # Application Load Balancer (ALB)
   ApplicationLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-    Properties: 
-      Name: ApplicationLoadBalancer
+    Properties:
       Subnets:
         - !Ref PublicSubnet1
         - !Ref PublicSubnet2
@@ -366,6 +478,13 @@ Resources:
         - !Ref ALBSecurityGroup
       Scheme: internet-facing
       IpAddressType: ipv4
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-ApplicationLoadBalancer
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
   # ALB Listener for HTTP
   ALBListener:
@@ -380,6 +499,80 @@ Resources:
       LoadBalancerArn: !Ref ApplicationLoadBalancer
       Port: 80
       Protocol: HTTP
+
+  # WAFv2 Web ACL
+  WAFWebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      DefaultAction:
+        Allow: {}  # Allow all by default unless blocked by a rule
+      Scope: REGIONAL 
+      VisibilityConfig:
+        CloudWatchMetricsEnabled: true
+        MetricName: WAFWebACL
+        SampledRequestsEnabled: true
+      # Add rules here if there is any
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-WAFWebACL
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
+
+  # Associate the WAF Web ACL with the ALB
+  WebACLAssociation:
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties:
+      ResourceArn: !Ref ApplicationLoadBalancer
+      WebACLArn: !GetAtt WAFWebACL.Arn
+
+  # VPC Endpoint for ECR API
+  EcrApiVpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VPC
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ecr.api
+      VpcEndpointType: Interface
+      SubnetIds: 
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !Ref PrivateSubnet3
+      SecurityGroupIds: 
+        - !Ref EndpointSecurityGroup
+  
+  # VPC Endpoint for ECR DKR (Docker image) service
+  EcrDkrVpcEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref VPC
+      ServiceName: !Sub com.amazonaws.${AWS::Region}.ecr.dkr
+      VpcEndpointType: Interface
+      SubnetIds: 
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+        - !Ref PrivateSubnet3
+      SecurityGroupIds: 
+        - !Ref EndpointSecurityGroup
+
+  # Security Group for the VPC Endpoints
+  EndpointSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow access to ECR via PrivateLink
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-EndpointSecurityGroup
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
 
 Outputs:
   VPCId:
@@ -415,8 +608,12 @@ Outputs:
   LoadBalancerDNSName:
     Description: "Application Load Balancer DNS Name"
     Value: !GetAtt ApplicationLoadBalancer.DNSName
-  LoadBalancerArn:
-    Description: "Application Load Balancer ARN"
-    Value: !GetAtt ApplicationLoadBalancer.LoadBalancerArn
+  # Since this is single CloudFormation stack, no need to reference the ApplicationLoadBalancer.LoadBalancerArn to anywhere else
+  WebACLArn:
+    Description: "WebACL ARN"
+    Value: !GetAtt WAFWebACL.Arn
+  ALBSecurityGroupId:
+    Description: "ALB Security Group ID"
+    Value: !Ref ALBSecurityGroup
     
   
