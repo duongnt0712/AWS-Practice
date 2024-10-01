@@ -491,7 +491,7 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       VpcId: !Ref VPC
-      Port: 8080
+      Port: 80
       Protocol: HTTP
       TargetType: ip
       HealthCheckProtocol: HTTP
@@ -699,6 +699,7 @@ Resources:
 
   ECSService:
     Type: AWS::ECS::Service
+    DependsOn: ALBListener #Service trying to attach to the target group before the target group is added to the load balancer. 
     Properties:
       Cluster: !Ref ECSCluster
       TaskDefinition: !Ref ECSTaskDefinition
