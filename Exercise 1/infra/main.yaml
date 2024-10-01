@@ -486,16 +486,31 @@ Resources:
         - Key: Application
           Value: !Ref ProjectName
 
+  # Target Group for ECS
+  ALBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      VpcId: !Ref VPC
+      Port: 8080
+      Protocol: HTTP
+      TargetType: ip
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: /
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-ALBTargetGroup
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
+
   # ALB Listener for HTTP
   ALBListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       DefaultActions:
-        - Type: fixed-response
-          FixedResponseConfig:
-            StatusCode: 200
-            ContentType: text/plain
-            MessageBody: "Hello from ALB!"
+        - Type: forward
+          TargetGroupArn: !Ref ALBTargetGroup
       LoadBalancerArn: !Ref ApplicationLoadBalancer
       Port: 80
       Protocol: HTTP
@@ -511,7 +526,45 @@ Resources:
         CloudWatchMetricsEnabled: true
         MetricName: WAFWebACL
         SampledRequestsEnabled: true
-      # Add rules here if there is any
+      Rules:
+        - Name: 'AWSManagedRulesCommonRuleSet' #against common threats: SQL injection, cross-site scripting, and more.
+          Priority: 1
+          OverrideAction:
+            None: {}
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: 'AWS'
+              Name: 'AWSManagedRulesCommonRuleSet'
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: 'AWSManagedRulesCommonRuleSet'
+
+        - Name: 'AWSManagedRulesBotControlRuleSet' #against bots that could be part of a DDoS attack.
+          Priority: 2
+          OverrideAction:
+            None: {}
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: 'AWS'
+              Name: 'AWSManagedRulesBotControlRuleSet'
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: 'AWSManagedRulesBotControlRuleSet'
+
+        - Name: 'RateLimitRule' # Blocks requests from any single IP address that exceeds a defined request rate 
+          Priority: 3
+          Action:
+            Block: {}
+          Statement:
+            RateBasedStatement:
+              Limit: 1000 #1000 requests within a 5-minute period
+              AggregateKeyType: IP
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: 'RateLimitRule'
       Tags:
         - Key: Name
           Value: !Sub ${ProjectName}-${EnvironmentName}-WAFWebACL
@@ -526,20 +579,6 @@ Resources:
     Properties:
       ResourceArn: !Ref ApplicationLoadBalancer
       WebACLArn: !GetAtt WAFWebACL.Arn
-
-  # VPC Endpoint for ECR API
-  EcrApiVpcEndpoint:
-    Type: AWS::EC2::VPCEndpoint
-    Properties:
-      VpcId: !Ref VPC
-      ServiceName: !Sub com.amazonaws.${AWS::Region}.ecr.api
-      VpcEndpointType: Interface
-      SubnetIds: 
-        - !Ref PrivateSubnet1
-        - !Ref PrivateSubnet2
-        - !Ref PrivateSubnet3
-      SecurityGroupIds: 
-        - !Ref EndpointSecurityGroup
   
   # VPC Endpoint for ECR DKR (Docker image) service
   EcrDkrVpcEndpoint:
@@ -563,8 +602,8 @@ Resources:
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
+          FromPort: 443
+          ToPort: 443
           CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
@@ -573,6 +612,155 @@ Resources:
           Value: !Ref EnvironmentName
         - Key: Application
           Value: !Ref ProjectName
+
+  # ECS
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-ECSCluster
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
+
+  ECSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Security group for ECS tasks"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          #TODO:
+          SourceSecurityGroupId: !Ref ALBSecurityGroup  # Allow traffic from the ALB
+      # SecurityGroupEgress:
+      #   - IpProtocol: -1  # Allow all outbound traffic
+      #     CidrIp: 0.0.0.0/0    
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-ECSSecurityGroup
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
+
+  ECSServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub ${ProjectName}-${EnvironmentName}-ECSServicePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:GetAuthorizationToken
+                Resource: "*"
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-ECSServiceRole
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
+
+  ECSTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub ${ProjectName}-${EnvironmentName}-ECSTask
+      NetworkMode: awsvpc
+      ExecutionRoleArn: !Ref ECSServiceRole
+      ContainerDefinitions:
+        - Name: nginx
+          Image: public.ecr.aws/nginx/nginx:stable-perl
+          Memory: 512
+          Cpu: 256
+          PortMappings:
+            - ContainerPort: 8080
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-ECSService
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
+
+  ECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref ECSCluster
+      TaskDefinition: !Ref ECSTaskDefinition
+      LoadBalancers:
+        - TargetGroupArn: !Ref ALBTargetGroup
+          ContainerName: nginx
+          ContainerPort: 8080
+      DesiredCount: 2
+      # Role: !Ref ECSServiceRole
+      NetworkConfiguration: 
+        AwsvpcConfiguration:
+          Subnets:
+            - !Ref PrivateSubnet1
+            - !Ref PrivateSubnet2
+            - !Ref PrivateSubnet3
+          SecurityGroups:
+            - !Ref ECSSecurityGroup
+          AssignPublicIp: DISABLED
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-${EnvironmentName}-ECSService
+        - Key: Environment
+          Value: !Ref EnvironmentName
+        - Key: Application
+          Value: !Ref ProjectName
+
+  # ECSAutoScalingGroup:
+  #   Type: "AWS::AutoScaling::AutoScalingGroup"
+  #   Properties:
+  #     VPCZoneIdentifier:
+  #       - !Ref PublicSubnet1
+  #       - !Ref PublicSubnet2
+  #       - !Ref PublicSubnet3
+  #     LaunchConfigurationName: !Ref ECSLaunchConfiguration
+  #     MinSize: 1
+  #     MaxSize: 3
+  #     DesiredCapacity: 2
+  #     Tags:
+  #       - Key: Name
+  #         Value: !Sub ${ProjectName}-${EnvironmentName}-ECSAutoScalingGroup
+  #         PropagateAtLaunch: true
+  #       - Key: Environment
+  #         Value: !Ref EnvironmentName
+  #         PropagateAtLaunch: true
+  #       - Key: Application
+  #         Value: !Ref ProjectName
+  #         PropagateAtLaunch: true
+
+  # ECSLaunchConfiguration:
+  #   Type: AWS::AutoScaling::LaunchConfiguration
+  #   Properties:
+  #     InstanceType: t3.micro 
+  #     ImageId: Fn::Sub: {{resolve:ssm:/aws/service/ecs/optimized-ami/amazon-linux-2/recommended/image_id}}
+  #     IamInstanceProfile: !Ref ECSInstanceProfile
+  #     SecurityGroups:
+  #       - !Ref ECSSecurityGroup
+  #     UserData:
+  #       Fn::Base64: !Sub |
+  #         #!/bin/bash
+  #         echo ECS_CLUSTER=${ECSCluster} >> /etc/ecs/ecs.config
+  #         echo ECS_ENABLE_CONTAINER_METADATA=true >> /etc/ecs/ecs.config
+  #     AssociatePublicIpAddress: true
 
 Outputs:
   VPCId:
