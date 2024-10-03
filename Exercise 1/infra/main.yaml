@@ -527,34 +527,8 @@ Resources:
         MetricName: WAFWebACL
         SampledRequestsEnabled: true
       Rules:
-        - Name: 'AWSManagedRulesCommonRuleSet' #against common threats: SQL injection, cross-site scripting, and more.
-          Priority: 1
-          OverrideAction:
-            None: {}
-          Statement:
-            ManagedRuleGroupStatement:
-              VendorName: 'AWS'
-              Name: 'AWSManagedRulesCommonRuleSet'
-          VisibilityConfig:
-            SampledRequestsEnabled: true
-            CloudWatchMetricsEnabled: true
-            MetricName: 'AWSManagedRulesCommonRuleSet'
-
-        - Name: 'AWSManagedRulesBotControlRuleSet' #against bots that could be part of a DDoS attack.
-          Priority: 2
-          OverrideAction:
-            None: {}
-          Statement:
-            ManagedRuleGroupStatement:
-              VendorName: 'AWS'
-              Name: 'AWSManagedRulesBotControlRuleSet'
-          VisibilityConfig:
-            SampledRequestsEnabled: true
-            CloudWatchMetricsEnabled: true
-            MetricName: 'AWSManagedRulesBotControlRuleSet'
-
         - Name: 'RateLimitRule' # Blocks requests from any single IP address that exceeds a defined request rate 
-          Priority: 3
+          Priority: 1
           Action:
             Block: {}
           Statement:

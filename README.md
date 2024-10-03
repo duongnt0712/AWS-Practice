@@ -16,10 +16,22 @@ aws configure list
 ```
 
 #### AWS CloudFormation 
-To create AWS CloudFormation stack:
+##### To create stack:
 ```
 aws cloudformation create-stack \
-    --stack-name your-stack-name \
-    --template-body file://template.yaml \
-    --parameters ParameterKey=ProjectName,ParameterValue=main-project ParameterKey=EnvironmentName,ParameterValue=dev
+    --stack-name demo-main \
+    --template-body file://main.yaml \
+    --parameters ParameterKey=ProjectName,ParameterValue=cloudformation-project ParameterKey=EnvironmentName,ParameterValue=Development
+    --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
 ```
+##### To update stack:
+```
+aws cloudformation create-stack \
+    --stack-name demo-main \
+    --template-body file://main.yaml \
+    --parameters ParameterKey=ProjectName,ParameterValue=cloudformation-project ParameterKey=EnvironmentName,ParameterValue=Development \
+    --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
+```
+- CAPABILITY_IAM: Allows CloudFormation to create IAM roles and policies.
+- CAPABILITY_NAMED_IAM: Allows CloudFormation to create IAM resources with specified names.
+- CAPABILITY_AUTO_EXPAND: Allows CloudFormation to perform actions that automatically expand macros in your template.
