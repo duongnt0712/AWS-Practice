@@ -32,6 +32,6 @@ aws cloudformation create-stack \
     --parameters ParameterKey=ProjectName,ParameterValue=cloudformation-project ParameterKey=EnvironmentName,ParameterValue=Development \
     --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
 ```
-- CAPABILITY_IAM: Allows CloudFormation to create IAM roles and policies.
-- CAPABILITY_NAMED_IAM: Allows CloudFormation to create IAM resources with specified names.
-- CAPABILITY_AUTO_EXPAND: Allows CloudFormation to perform actions that automatically expand macros in your template.
+- `CAPABILITY_IAM`: Allows CloudFormation to create IAM roles and policies.
+- `CAPABILITY_NAMED_IAM`: Allows CloudFormation to create IAM resources with specified names.
+- `CAPABILITY_AUTO_EXPAND`: Allows CloudFormation to perform actions that automatically expand macros in your template.
