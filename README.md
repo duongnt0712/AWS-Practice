@@ -21,7 +21,7 @@ aws configure list
 aws cloudformation create-stack \
     --stack-name demo-main \
     --template-body file://main.yaml \
-    --parameters ParameterKey=ProjectName,ParameterValue=cloudformation-project ParameterKey=EnvironmentName,ParameterValue=Development
+    --parameters ParameterKey=ProjectName,ParameterValue=cloudformation-project ParameterKey=EnvironmentName,ParameterValue=Development \
     --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND
 ```
 ##### To update stack:
