@@ -686,7 +686,7 @@ Resources:
           Memory: 512
           Cpu: 256
           PortMappings:
-            - ContainerPort: 8080
+            - ContainerPort: 80
               Protocol: tcp
       Tags:
         - Key: Name
@@ -705,7 +705,7 @@ Resources:
       LoadBalancers:
         - TargetGroupArn: !Ref ALBTargetGroup
           ContainerName: nginx
-          ContainerPort: 8080
+          ContainerPort: 80
       DesiredCount: 2
       LaunchType: FARGATE
       NetworkConfiguration: 
